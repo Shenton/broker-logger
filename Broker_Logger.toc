@@ -1,0 +1,12 @@
+﻿## Interface: 50001
+## Title: Broker Logger
+## Notes: Automaticaly enable combat logging when zoning into instances.
+## Author: Shenton
+## SavedVariables: BrokerLoggerDB
+## Version: 1.0.0
+
+Embeds.xml
+
+Localization\Locales-enUS.lua
+
+Core.lua
