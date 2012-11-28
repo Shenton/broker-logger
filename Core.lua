@@ -249,7 +249,7 @@ function A:ConfigurationPanel()
                     instanceType =
                     {
                         order = 10,
-                        name = L["instance Types"],
+                        name = L["Instance Types"],
                         type = "group",
                         inline = true,
                         args = {},
@@ -332,11 +332,7 @@ end
 -- Called after the addon is fully loaded
 function A:OnInitialize()
     A.db = LibStub("AceDB-3.0"):New("BrokerLoggerDB", defaultDB);
-end
 
---- AceAddon callback
--- Called during the PLAYER_LOGIN event
-function A:OnEnable()
     -- LDB
     A.ldb = LibStub("LibDataBroker-1.1"):NewDataObject("Broker Logger",
     {
@@ -366,7 +362,11 @@ function A:OnEnable()
             tooltip:AddLine(L["|cFFC79C6ELeft-Click:|cFF33FF99 Toggle logging\n|cFFC79C6ERight-Click:|cFF33FF99 Display the configuration menu"]);
         end,
     });
+end
 
+--- AceAddon callback
+-- Called during the PLAYER_LOGIN event
+function A:OnEnable()
     -- Events
     A:RegisterEvent("PLAYER_ENTERING_WORLD");
 
