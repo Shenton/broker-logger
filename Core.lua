@@ -6,6 +6,8 @@
 -- Core.lua
 -- ********************************************************************************
 
+local LibStub = LibStub;
+
 -- Ace libs (<3)
 local A = LibStub("AceAddon-3.0"):NewAddon("Broker_Logger", "AceEvent-3.0", "AceHook-3.0");
 local L = LibStub("AceLocale-3.0"):GetLocale("Broker_Logger");
@@ -14,8 +16,22 @@ local L = LibStub("AceLocale-3.0"):GetLocale("Broker_Logger");
 -- Variables
 -- ********************************************************************************
 
---- LUA globals to locals
-local math, string, pairs, format = math, string, pairs, format;
+-- Globals to locals
+-- LUA
+local pairs = pairs;
+local ipairs = ipairs;
+local tostring = tostring;
+-- WoW
+local LoggingCombat = LoggingCombat;
+local PlaySound = PlaySound;
+local DEFAULT_CHAT_FRAME = DEFAULT_CHAT_FRAME;
+local StaticPopup_Show = StaticPopup_Show;
+local IsInInstance = IsInInstance;
+local GetInstanceInfo = GetInstanceInfo;
+local YES = YES;
+local NO = NO;
+--local GetDifficultyInfo = GetDifficultyInfo -- 5.2 = use ##########################
+
 
 -- AddOn version
 A.version = GetAddOnMetadata("Broker_Logger", "Version");
@@ -30,17 +46,17 @@ A.color =
 };
 
 -- Instance types table
-A.instanceTypesTable =
+A.instanceTypesTable = -- 5.2 = delete ###########################################################
 {
-    [2] = L["5 Player & Scenario"],
-    [3] = L["5 Player (Heroic)"],
-    [4] = L["10 Player"],
-    [5] = L["25 Player"],
-    [6] = L["10 Player (Heroic)"],
-    [7] = L["25 Player (Heroic)"],
-    [8] = L["Raid Finder"],
-    [9] = L["Challenge Mode"],
-    [10] = L["40 Player"],
+    [1] = L["5 Player & Scenario"],
+    [2] = L["5 Player (Heroic)"],
+    [3] = L["10 Player"],
+    [4] = L["25 Player"],
+    [5] = L["10 Player (Heroic)"],
+    [6] = L["25 Player (Heroic)"],
+    [7] = L["Raid Finder"],
+    [8] = L["Challenge Mode"],
+    [9] = L["40 Player"],
 };
 
 -- Icons
@@ -49,23 +65,41 @@ A.iconDisabled = "Interface\\ICONS\\INV_Inscription_ParchmentVar01";
 
 -- Static popup
 StaticPopupDialogs["BrokerLoggerNewInstance"] = {
-	text = L["You have entered:\n\n|cff00ff96%s|r\n|cffc79c6e%s|r\n\nEnable logging for this area?"],
-	button1 = YES,
-	button2 = NO,
-	OnAccept = function(self)
-        A.db.profile.enabledMapID[self.data.instanceType][self.data.mapID] = 1;
+    text = L["You have entered:\n\n\n|cff00ff96Instance: %s|r\n\n|cffc79c6eDifficulty: %s|r\n\n\nEnable logging for this area?"],
+    button1 = YES,
+    button2 = NO,
+    OnAccept = function(self)
+        A.db.profile.enabledMapID[self.data.difficultyIndex][self.data.instanceMapID] = 1;
         LoggingCombat(true);
     end,
-	OnCancel = function(self)
-        A.db.profile.enabledMapID[self.data.instanceType][self.data.mapID] = 0;
-	end,
-	hideOnEscape = 1,
-	timeout = 0,
+    OnCancel = function(self)
+        A.db.profile.enabledMapID[self.data.difficultyIndex][self.data.instanceMapID] = 0;
+    end,
+    hideOnEscape = 1,
+    timeout = 0,
+    preferredIndex = 3,
 };
+
+-- Database revision number
+A.databaseRevision = 2;
 
 -- ********************************************************************************
 -- Functions
 -- ********************************************************************************
+
+function A:Message(text, color, silent)
+    if ( color ) then
+        color = A.color["RED"];
+    else
+        color = A.color["GREEN"]
+    end
+
+    if ( not silent ) then
+        PlaySound("TellMessage");
+    end
+
+    DEFAULT_CHAT_FRAME:AddMessage(color.."Broker Logger"..": "..A.color["RESET"]..text);
+end
 
 --- Toggle combat logging
 function A:ToggleLogging()
@@ -74,33 +108,6 @@ function A:ToggleLogging()
     else
         LoggingCombat(true);
     end
-end
-
---- Ask the player if combat log should be enabled in this area
--- @param mapID The current area ID
-function A:AskAreaLogging(mapID, instanceType)
-    local name = GetMapNameByID(mapID);
-
-    local data =
-    {
-        instanceType = instanceType,
-        mapID = mapID,
-    };
-
-    StaticPopup_Show("BrokerLoggerNewInstance", name, A.instanceTypesTable[instanceType], data);
-end
-
---- Get the current map id and return to the current one
-function A:GetCurrentMapAreaID()
-    local currentMapID = GetCurrentMapAreaID();
-
-    SetMapToCurrentZone();
-
-    local mapID = GetCurrentMapAreaID();
-
-    SetMapByID(currentMapID);
-
-    return mapID;
 end
 
 --- Return a bool value for enabled instance logging db
@@ -114,16 +121,21 @@ end
 function A:IsLoggingNeeded()
     if ( not IsInInstance() ) then return nil; end
 
-    local instanceType = GetInstanceDifficulty();
+    local instanceName, _, difficultyIndex, difficultyName, _, _, _, instanceMapID = GetInstanceInfo();
 
-    if ( instanceType == 1 ) then return nil; end
+    if ( difficultyIndex == 0 ) then return nil; end
 
-    local mapID = A:GetCurrentMapAreaID();
+    -- Add instance name to database
+    if ( not A.db.global.instanceNameByID[instanceMapID] ) then
+        A.db.global.instanceNameByID[instanceMapID] = instanceName;
+    end
 
-    if ( A.db.profile.enabledMapID[instanceType][mapID] ) then
-        if ( A:GetVarBool(A.db.profile.enabledMapID[instanceType][mapID]) ) then return 1; end
+    if ( A.db.profile.enabledMapID[difficultyIndex][instanceMapID] ) then -- Instance is known
+        if ( A:GetVarBool(A.db.profile.enabledMapID[difficultyIndex][instanceMapID]) ) then return 1; end -- Log!
     else
-        if ( A.db.profile.instanceType[instanceType] ) then A:AskAreaLogging(mapID, instanceType); end
+        if ( A.db.profile.instanceType[difficultyIndex] ) then -- Asking for logging for that difficulty is enabled
+            StaticPopup_Show("BrokerLoggerNewInstance", instanceName, difficultyName, {difficultyIndex = difficultyIndex, instanceMapID = instanceMapID});
+        end
     end
 
     return nil;
@@ -178,28 +190,33 @@ local defaultDB =
         auto = 1,
         instanceType =
         {
-            [2] = 1, -- 5 Player & Scenario
-            [3] = 1, -- 5 Player (Heroic)
-            [4] = 1, -- 10 Player
-            [5] = 1, -- 25 Player
-            [6] = 1, -- 10 Player (Heroic)
-            [7] = 1, -- 25 Player (Heroic)
-            [8] = 1, -- Raid Finder
-            [9] = 1, -- Challenge Mode
-            [10] = 1, -- 40 Player
+            [1] = 1, -- 5 Player & Scenario
+            [2] = 1, -- 5 Player (Heroic)
+            [3] = 1, -- 10 Player
+            [4] = 1, -- 25 Player
+            [5] = 1, -- 10 Player (Heroic)
+            [6] = 1, -- 25 Player (Heroic)
+            [7] = 1, -- Raid Finder
+            [8] = 1, -- Challenge Mode
+            [9] = 1, -- 40 Player
         },
         enabledMapID =
         {
-            [2] = {}, -- 5 Player & Scenario
-            [3] = {}, -- 5 Player (Heroic)
-            [4] = {}, -- 10 Player
-            [5] = {}, -- 25 Player
-            [6] = {}, -- 10 Player (Heroic)
-            [7] = {}, -- 25 Player (Heroic)
-            [8] = {}, -- Raid Finder
-            [9] = {}, -- Challenge Mode
-            [10] = {}, -- 40 Player
+            [1] = {}, -- 5 Player & Scenario
+            [2] = {}, -- 5 Player (Heroic)
+            [3] = {}, -- 10 Player
+            [4] = {}, -- 25 Player
+            [5] = {}, -- 10 Player (Heroic)
+            [6] = {}, -- 25 Player (Heroic)
+            [7] = {}, -- Raid Finder
+            [8] = {}, -- Challenge Mode
+            [9] = {}, -- 40 Player
         },
+    },
+    global =
+    {
+        databaseRevision = 0,
+        instanceNameByID = {},
     },
 };
 
@@ -249,7 +266,7 @@ function A:ConfigurationPanel()
                     instanceType =
                     {
                         order = 10,
-                        name = L["Instance Types"],
+                        name = L["Ask for logging when entering"],
                         type = "group",
                         inline = true,
                         args = {},
@@ -267,15 +284,18 @@ function A:ConfigurationPanel()
     };
 
     local order = 0;
-    for k,v in pairs(A.instanceTypesTable) do
-        panel.args.options.args.instanceType.args[v] =
+    for i=1,9 do
+        --local difficultyName = GetDifficultyInfo(i); -- 5.2 = use #######################################
+        local difficultyName = A.instanceTypesTable[i]; -- 5.2 = delete ############################################
+
+        panel.args.options.args.instanceType.args[difficultyName] =
         {
             order = order,
-            name = v,
-            desc = L["With this options enabled it will ask if you want to enable logging when zoning to a new %s instance"]:format(v),
+            name = difficultyName,
+            desc = L["With this options enabled it will ask if you want to enable logging when zoning to a new %s instance."]:format(difficultyName),
             type = "toggle",
-            set = function() A.db.profile.instanceType[k] = not A.db.profile.instanceType[k]; end,
-            get = function() return A.db.profile.instanceType[k]; end
+            set = function() A.db.profile.instanceType[i] = not A.db.profile.instanceType[i]; end,
+            get = function() return A.db.profile.instanceType[i]; end
         };
 
         order = order + 1;
@@ -284,23 +304,24 @@ function A:ConfigurationPanel()
     order = 0;
     local order2 = 0;
     for k,v in pairs(A.db.profile.enabledMapID) do
-        panel.args.enabledInstance.args[A.instanceTypesTable[k]] =
+        --local difficultyName = GetDifficultyInfo(k); -- 5.2 = use #####################################
+        local difficultyName = A.instanceTypesTable[k]; -- 5.2 = delete ############################################
+
+        panel.args.enabledInstance.args[difficultyName] =
         {
             order = order,
-            name = A.instanceTypesTable[k],
+            name = difficultyName,
             type = "group",
             inline = true,
             args = {},
         };
 
         for kk,vv in pairs(v) do
-            local name = GetMapNameByID(kk);
-
-            panel.args.enabledInstance.args[A.instanceTypesTable[k]].args[name] =
+            panel.args.enabledInstance.args[difficultyName].args[A.db.global.instanceNameByID[kk] or tostring(kk)] =
             {
                 order = order2,
-                name = name,
-                desc = L["Enable auto logging for %s (%s)."]:format(name, A.instanceTypesTable[k]),
+                name = A.db.global.instanceNameByID[kk] or tostring(kk),
+                desc = L["Enable auto logging for %s (%s)."]:format(A.db.global.instanceNameByID[kk] or tostring(kk), difficultyName),
                 type = "toggle",
                 set = function(info, val)
                     if ( val ) then
@@ -322,6 +343,44 @@ function A:ConfigurationPanel()
     panel.args.profile.order = 1000;
 
     return panel;
+end
+
+-- ********************************************************************************
+-- Database revision handling
+-- ********************************************************************************
+
+-- Is an update needed?
+function A:CheckDatabaseRevision()
+    if ( A.db.global.databaseRevision < A.databaseRevision ) then
+        if ( A.db.global.databaseRevision < 2 ) then
+            A:CheckDatabaseRevision2();
+        end
+    end
+end
+
+-- 5.2
+-- GetInstanceDifficulty() removed, using GetInstanceInfo() instead, offset by 1 the instance difficulty
+-- Using instance map IDs instead of global map IDs, this need a wipe of db
+function A:CheckDatabaseRevision2()
+    for k,v in ipairs(A.db:GetProfiles()) do
+        if ( A.db.profiles[v] ) then
+            if ( A.db.profiles[v].instanceType ) then -- this can be saved, offset by 1
+                for i=1,9 do
+                    A.db.profiles[v].instanceType[i] = A.db.profiles[v].instanceType[i+1];
+                end
+
+                A.db.profiles[v].instanceType[10] = nil;
+            end
+
+            if ( A.db.profiles[v].enabledMapID ) then -- this can not be saved, wipe
+                for i=1,10 do
+                    A.db.profiles[v].enabledMapID[i] = nil;
+                end
+            end
+        end
+    end
+
+    A.db.global.databaseRevision = 2;
 end
 
 -- ********************************************************************************
@@ -359,7 +418,7 @@ function A:OnInitialize()
             end
 
             tooltip:AddLine(" ");
-            tooltip:AddLine(L["|cFFC79C6ELeft-Click:|cFF33FF99 Toggle logging\n|cFFC79C6ERight-Click:|cFF33FF99 Display the configuration menu"]);
+            tooltip:AddLine(L["|cFFC79C6ELeft-Click:|cFF33FF99 Toggle logging\n|cFFC79C6ERight-Click:|cFF33FF99 Display the configuration panel"]);
         end,
     });
 end
@@ -372,6 +431,9 @@ function A:OnEnable()
 
     -- Hooks
     A:SecureHook("LoggingCombat");
+
+    -- Is update needed?
+    A:CheckDatabaseRevision();
 
     -- Configuration panel
     LibStub("AceConfig-3.0"):RegisterOptionsTable("BrokerLoggerConfig", A.ConfigurationPanel);

@@ -3,10 +3,11 @@
 ## Notes: Automaticaly enable combat logging when zoning into instances.
 ## Author: Shenton
 ## SavedVariables: BrokerLoggerDB
-## Version: 1.0.1
+## Version: 1.1.0
 
 Embeds.xml
 
 Localization\Locales-enUS.lua
+Localization\Locales-frFR.lua
 
 Core.lua
