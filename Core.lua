@@ -30,7 +30,7 @@ local IsInInstance = IsInInstance;
 local GetInstanceInfo = GetInstanceInfo;
 local YES = YES;
 local NO = NO;
---local GetDifficultyInfo = GetDifficultyInfo -- 5.2 = use ##########################
+local GetDifficultyInfo = GetDifficultyInfo
 
 
 -- AddOn version
@@ -43,20 +43,6 @@ A.color =
     ["GREEN"] = "|cff33ff99",
     ["WHITE"] = "|cffffffff",
     ["RESET"] = "|r",
-};
-
--- Instance types table
-A.instanceTypesTable = -- 5.2 = delete ###########################################################
-{
-    [1] = L["5 Player & Scenario"],
-    [2] = L["5 Player (Heroic)"],
-    [3] = L["10 Player"],
-    [4] = L["25 Player"],
-    [5] = L["10 Player (Heroic)"],
-    [6] = L["25 Player (Heroic)"],
-    [7] = L["Raid Finder"],
-    [8] = L["Challenge Mode"],
-    [9] = L["40 Player"],
 };
 
 -- Icons
@@ -285,8 +271,7 @@ function A:ConfigurationPanel()
 
     local order = 0;
     for i=1,9 do
-        --local difficultyName = GetDifficultyInfo(i); -- 5.2 = use #######################################
-        local difficultyName = A.instanceTypesTable[i]; -- 5.2 = delete ############################################
+        local difficultyName = GetDifficultyInfo(i);
 
         panel.args.options.args.instanceType.args[difficultyName] =
         {
@@ -304,8 +289,7 @@ function A:ConfigurationPanel()
     order = 0;
     local order2 = 0;
     for k,v in pairs(A.db.profile.enabledMapID) do
-        --local difficultyName = GetDifficultyInfo(k); -- 5.2 = use #####################################
-        local difficultyName = A.instanceTypesTable[k]; -- 5.2 = delete ############################################
+        local difficultyName = GetDifficultyInfo(k);
 
         panel.args.enabledInstance.args[difficultyName] =
         {
@@ -381,6 +365,8 @@ function A:CheckDatabaseRevision2()
     end
 
     A.db.global.databaseRevision = 2;
+
+    A:CheckDatabaseRevision();
 end
 
 -- ********************************************************************************
