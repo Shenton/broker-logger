@@ -3,7 +3,7 @@
 ## Notes: Automaticaly enable combat logging when zoning into instances.
 ## Author: Shenton
 ## SavedVariables: BrokerLoggerDB
-## Version: 1.1.1
+## Version: 1.1.2
 
 Embeds.xml
 

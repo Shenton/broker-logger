@@ -22,7 +22,7 @@ local pairs = pairs;
 local ipairs = ipairs;
 local tostring = tostring;
 -- WoW
-local LoggingCombat = LoggingCombat;
+--local LoggingCombat = LoggingCombat; Since 5.2 I cannot hook it when local - Derp blizzard
 local PlaySound = PlaySound;
 local DEFAULT_CHAT_FRAME = DEFAULT_CHAT_FRAME;
 local StaticPopup_Show = StaticPopup_Show;
@@ -31,7 +31,6 @@ local GetInstanceInfo = GetInstanceInfo;
 local YES = YES;
 local NO = NO;
 local GetDifficultyInfo = GetDifficultyInfo
-
 
 -- AddOn version
 A.version = GetAddOnMetadata("Broker_Logger", "Version");
@@ -51,7 +50,7 @@ A.iconDisabled = "Interface\\ICONS\\INV_Inscription_ParchmentVar01";
 
 -- Static popup
 StaticPopupDialogs["BrokerLoggerNewInstance"] = {
-    text = L["You have entered:\n\n\n|cff00ff96Instance: %s|r\n\n|cffc79c6eDifficulty: %s|r\n\n\nEnable logging for this area?"],
+    text = L["You have entered:\n\n\n|cff00ff96Instance: |r%s\n\n|cffc79c6eDifficulty: |r%s\n\n\nEnable logging for this area?"],
     button1 = YES,
     button2 = NO,
     OnAccept = function(self)
@@ -417,6 +416,8 @@ function A:OnEnable()
 
     -- Hooks
     A:SecureHook("LoggingCombat");
+    --A:Hook("LoggingCombat", true);
+    --hooksecurefunc("LoggingCombat", A.LoggingCombat);
 
     -- Is update needed?
     A:CheckDatabaseRevision();
