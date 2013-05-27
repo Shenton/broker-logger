@@ -1,9 +1,9 @@
-﻿## Interface: 50200
+﻿## Interface: 50300
 ## Title: Broker Logger
 ## Notes: Automaticaly enable combat logging when zoning into instances.
 ## Author: Shenton
 ## SavedVariables: BrokerLoggerDB
-## Version: 1.1.2
+## Version: 1.1.3
 
 Embeds.xml
 

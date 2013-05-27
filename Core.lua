@@ -115,6 +115,17 @@ function A:IsLoggingNeeded()
         A.db.global.instanceNameByID[instanceMapID] = instanceName;
     end
 
+    -- 5.3 moved scenario from index 1 to 12, need to remove them from DB
+    -- The user need to enter the scenario for removing it
+    -- but this is far better than wipping everything
+    if ( difficultyIndex == 11 or difficultyIndex == 12 ) then
+        for k,v in pairs(A.db.profile.enabledMapID[1]) do
+            if ( k == instanceMapID ) then
+                A.db.profile.enabledMapID[1][instanceMapID] = nil;
+            end
+        end
+    end
+
     if ( A.db.profile.enabledMapID[difficultyIndex][instanceMapID] ) then -- Instance is known
         if ( A:GetVarBool(A.db.profile.enabledMapID[difficultyIndex][instanceMapID]) ) then return 1; end -- Log!
     else
@@ -137,12 +148,23 @@ function A:Update()
     end
 end
 
+--- Set auto log state
+function A:SetAutoLoggingState()
+    if ( A.db.profile.auto ) then
+        A:RegisterEvent("ZONE_CHANGED_NEW_AREA", "IsLoggingNeededCallback");
+        A:RegisterEvent("PLAYER_DIFFICULTY_CHANGED", "IsLoggingNeededCallback");
+    else
+        A:UnregisterEvent("ZONE_CHANGED_NEW_AREA");
+        A:UnregisterEvent("PLAYER_DIFFICULTY_CHANGED");
+    end
+end
+
 --- Callback for event PLAYER_ENTERING_WORLD
 function A:PLAYER_ENTERING_WORLD()
     A.isLogging = LoggingCombat();
     A:Update();
+    A:SetAutoLoggingState();
     A:UnregisterEvent("PLAYER_ENTERING_WORLD");
-    if ( A.db.profile.auto ) then A:RegisterEvent("ZONE_CHANGED_NEW_AREA"); end
 end
 
 --- Callback for hook LoggingCombat()
@@ -152,8 +174,8 @@ function A:LoggingCombat(state)
     A:Update();
 end
 
---- Callback for event ZONE_CHANGED_NEW_AREA
-function A:ZONE_CHANGED_NEW_AREA()
+--- Callback for events
+function A:IsLoggingNeededCallback()
     if ( A:IsLoggingNeeded() ) then
         LoggingCombat(true);
     else
@@ -175,27 +197,33 @@ local defaultDB =
         auto = 1,
         instanceType =
         {
-            [1] = 1, -- 5 Player & Scenario
-            [2] = 1, -- 5 Player (Heroic)
+            [1] = 1, -- Normal
+            [2] = 1, -- Heroic
             [3] = 1, -- 10 Player
             [4] = 1, -- 25 Player
             [5] = 1, -- 10 Player (Heroic)
             [6] = 1, -- 25 Player (Heroic)
-            [7] = 1, -- Raid Finder
+            [7] = 1, -- Looking For Raid
             [8] = 1, -- Challenge Mode
             [9] = 1, -- 40 Player
+            --[10] = 1, -- Scenario
+            [11] = 1, -- Scenario (Heroic)
+            [12] = 1, -- Scenario
         },
         enabledMapID =
         {
-            [1] = {}, -- 5 Player & Scenario
-            [2] = {}, -- 5 Player (Heroic)
+            [1] = {}, -- Normal
+            [2] = {}, -- Heroic
             [3] = {}, -- 10 Player
             [4] = {}, -- 25 Player
             [5] = {}, -- 10 Player (Heroic)
             [6] = {}, -- 25 Player (Heroic)
-            [7] = {}, -- Raid Finder
+            [7] = {}, -- Looking For Raid
             [8] = {}, -- Challenge Mode
             [9] = {}, -- 40 Player
+            --[10] = {}, -- Scenario
+            [11] = {}, -- Scenario (Heroic)
+            [12] = {}, -- Scenario
         },
     },
     global =
@@ -237,12 +265,7 @@ function A:ConfigurationPanel()
                                 type = "toggle",
                                 set = function()
                                     A.db.profile.auto = not A.db.profile.auto;
-
-                                    if ( A.db.profile.auto ) then
-                                        A:RegisterEvent("ZONE_CHANGED_NEW_AREA");
-                                    else
-                                        A:UnregisterEvent("ZONE_CHANGED_NEW_AREA");
-                                    end
+                                    A:SetAutoLoggingState();
                                 end,
                                 get = function() return A.db.profile.auto; end
                             },
@@ -269,20 +292,22 @@ function A:ConfigurationPanel()
     };
 
     local order = 0;
-    for i=1,9 do
+    for i=1,12 do
         local difficultyName = GetDifficultyInfo(i);
 
-        panel.args.options.args.instanceType.args[difficultyName] =
-        {
-            order = order,
-            name = difficultyName,
-            desc = L["With this options enabled it will ask if you want to enable logging when zoning to a new %s instance."]:format(difficultyName),
-            type = "toggle",
-            set = function() A.db.profile.instanceType[i] = not A.db.profile.instanceType[i]; end,
-            get = function() return A.db.profile.instanceType[i]; end
-        };
+        if ( difficultyName ) then
+            panel.args.options.args.instanceType.args[difficultyName] =
+            {
+                order = order,
+                name = difficultyName,
+                desc = L["With this options enabled it will ask if you want to enable logging when zoning to a new %s instance."]:format(difficultyName),
+                type = "toggle",
+                set = function() A.db.profile.instanceType[i] = not A.db.profile.instanceType[i]; end,
+                get = function() return A.db.profile.instanceType[i]; end
+            };
 
-        order = order + 1;
+            order = order + 1;
+        end
     end
 
     order = 0;
