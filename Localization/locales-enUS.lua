@@ -20,5 +20,6 @@ L["With this options enabled it will ask if you want to enable logging when zoni
 L["Enabled Instances"] = true;
 L["You have entered:\n\n\n|cff00ff96Instance: |r%s\n\n|cffc79c6eDifficulty: |r%s\n\n\nEnable logging for this area?"] = true;
 L["Enable auto logging for %s (%s)."] = true;
+L["Instance type is unknown to the addon, an uptade might be available."] = true;
 L["|cFFC79C6ELeft-Click:|cFF33FF99 Toggle logging\n|cFFC79C6ERight-Click:|cFF33FF99 Display the configuration panel"] = true;
 end

@@ -126,6 +126,12 @@ function A:IsLoggingNeeded()
         end
     end
 
+    -- Instance type is unknown to the addon
+    if ( not A.db.profile.enabledMapID[difficultyIndex] ) then
+        A:Message(L["Instance type is unknown to the addon, an uptade might be available."], 1);
+        return nil;
+    end
+
     if ( A.db.profile.enabledMapID[difficultyIndex][instanceMapID] ) then -- Instance is known
         if ( A:GetVarBool(A.db.profile.enabledMapID[difficultyIndex][instanceMapID]) ) then return 1; end -- Log!
     else
@@ -206,9 +212,11 @@ local defaultDB =
             [7] = 1, -- Looking For Raid
             [8] = 1, -- Challenge Mode
             [9] = 1, -- 40 Player
-            --[10] = 1, -- Scenario
+            --[10] = 1, -- Scenario (old pre 5.2)
             [11] = 1, -- Scenario (Heroic)
             [12] = 1, -- Scenario
+            --[13] = 1, -- none
+            [14] = 1, -- Flex
         },
         enabledMapID =
         {
@@ -221,9 +229,11 @@ local defaultDB =
             [7] = {}, -- Looking For Raid
             [8] = {}, -- Challenge Mode
             [9] = {}, -- 40 Player
-            --[10] = {}, -- Scenario
+            --[10] = {}, -- Scenario (old pre 5.2)
             [11] = {}, -- Scenario (Heroic)
             [12] = {}, -- Scenario
+            --[13] = {}, -- none
+            [14] = {}, -- Flex
         },
     },
     global =
@@ -292,7 +302,7 @@ function A:ConfigurationPanel()
     };
 
     local order = 0;
-    for i=1,12 do
+    for i=1,14 do
         local difficultyName = GetDifficultyInfo(i);
 
         if ( difficultyName ) then
@@ -441,8 +451,6 @@ function A:OnEnable()
 
     -- Hooks
     A:SecureHook("LoggingCombat");
-    --A:Hook("LoggingCombat", true);
-    --hooksecurefunc("LoggingCombat", A.LoggingCombat);
 
     -- Is update needed?
     A:CheckDatabaseRevision();

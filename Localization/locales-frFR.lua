@@ -20,5 +20,6 @@ L["With this options enabled it will ask if you want to enable logging when zoni
 L["Enabled Instances"] = "Instances activ\195\169es";
 L["You have entered:\n\n\n|cff00ff96Instance: |r%s\n\n|cffc79c6eDifficulty: |r%s\n\n\nEnable logging for this area?"] = "Vous venez d'entrer dans:\n\n\n|cff00ff96Instance: |r%s\n\n|cffc79c6eDifficult\195\169e: |r%s\n\n\nActiver la sauvegarde du journal de combat?";
 L["Enable auto logging for %s (%s)."] = "Active la sauvegarde automatique du journal de combat pour %s (%s).";
+L["Instance type is unknown to the addon, an uptade might be available."] = "L'addon ne connait ce type d'instance, une mise \195\160 jour est surement disponible."
 L["|cFFC79C6ELeft-Click:|cFF33FF99 Toggle logging\n|cFFC79C6ERight-Click:|cFF33FF99 Display the configuration panel"] = "|cFFC79C6EClique-Gauche:|cFF33FF99 Active/D\195\169sactive la sauvegarde du journal de combat\n|cFFC79C6EClique-Droit:|cFF33FF99 Affiche la fen\195\170tre de configuration";
 end
