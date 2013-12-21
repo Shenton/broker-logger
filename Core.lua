@@ -410,7 +410,7 @@ end
 --- AceAddon callback
 -- Called after the addon is fully loaded
 function A:OnInitialize()
-    A.db = LibStub("AceDB-3.0"):New("BrokerLoggerDB", defaultDB);
+    A.db = LibStub("AceDB-3.0"):New("BrokerLoggerDB", defaultDB, true);
 
     -- LDB
     A.ldb = LibStub("LibDataBroker-1.1"):NewDataObject("Broker Logger",
