@@ -17,20 +17,13 @@ local L = LibStub("AceLocale-3.0"):GetLocale("Broker_Logger");
 -- ********************************************************************************
 
 -- Globals to locals
--- LUA
 local pairs = pairs;
 local ipairs = ipairs;
 local tostring = tostring;
--- WoW
---local LoggingCombat = LoggingCombat; Since 5.2 I cannot hook it when local - Derp blizzard
-local PlaySound = PlaySound;
-local DEFAULT_CHAT_FRAME = DEFAULT_CHAT_FRAME;
-local StaticPopup_Show = StaticPopup_Show;
-local IsInInstance = IsInInstance;
-local GetInstanceInfo = GetInstanceInfo;
-local YES = YES;
-local NO = NO;
-local GetDifficultyInfo = GetDifficultyInfo
+
+-- mikk's FindGlobals
+-- GLOBALS:  LoggingCombat, PlaySound, DEFAULT_CHAT_FRAME, IsInInstance, GetInstanceInfo
+-- GLOBALS: StaticPopup_Show, GetDifficultyInfo
 
 -- AddOn version
 A.version = GetAddOnMetadata("Broker_Logger", "Version");
