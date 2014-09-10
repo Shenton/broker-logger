@@ -3,7 +3,7 @@
 ## Notes: Automaticaly enable combat logging when zoning into instances.
 ## Author: Shenton
 ## SavedVariables: BrokerLoggerDB
-## Version: 1.1.6
+## Version: 1.1.7
 
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
