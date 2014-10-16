@@ -188,6 +188,28 @@ end
 -- Configuration
 -- ********************************************************************************
 
+--      name                groupType   isHeroic    isChallengeMode displayHeroic   displayMythic  toggleDifficultyID
+-- 1    Normal              party       false       false           false           false           nil
+-- 2    Heroic              party       true        false           false           false           nil
+-- 3    10 Player           raid        false       false           false           false           5
+-- 4    25 Player           raid        false       false           false           false           6
+-- 5    10 Player (Heroic)  raid        true        false           false           false           3
+-- 6    25 Player (Heroic)  raid        true        false           false           false           4
+-- 7    Looking For Raid    raid        false       false           false           false           nil
+-- 8    Challenge Mode      party       true        true            false           false           nil
+-- 9    40 Player           raid        false       false           false           false           nil
+-- 10
+-- 11   Heroic Scenario     scenario    true        false           false           false           nil
+-- 12   Normal Scenario     scenario    false       false           false           false           nil
+-- 13
+-- 14   Normal              raid        false       false           false           false           nil
+-- 15   Heroic              raid        false       false           true            false           nil
+-- 16   Mythic              raid        true        false           false           true            nil
+-- 17   Looking For Raid    raid        false       false           false           false           nil
+-- 18   Event               raid        false       false           false           false           nil
+-- 19   Event               party       false       false           false           false           nil
+-- 20   Event Scenario      scenario    false       false           false           false           nil
+
 --- Default configation table
 local defaultDB =
 {
@@ -205,11 +227,17 @@ local defaultDB =
             [7] = 1, -- Looking For Raid
             [8] = 1, -- Challenge Mode
             [9] = 1, -- 40 Player
-            --[10] = 1, -- Scenario (old pre 5.2)
+            --[10]
             [11] = 1, -- Scenario (Heroic)
             [12] = 1, -- Scenario
-            --[13] = 1, -- none
-            [14] = 1, -- Flex
+            --[13]
+            [14] = 1, -- Normal
+            [15] = 1, -- Heroic
+            [16] = 1, -- Mythic
+            [17] = 1, -- Looking For Raid
+            [18] = 1, -- Event (raid)
+            [19] = 1, -- Event (dungeon)
+            [20] = 1, -- Event Scenario
         },
         enabledMapID =
         {
@@ -222,11 +250,17 @@ local defaultDB =
             [7] = {}, -- Looking For Raid
             [8] = {}, -- Challenge Mode
             [9] = {}, -- 40 Player
-            --[10] = {}, -- Scenario (old pre 5.2)
+            --[10]
             [11] = {}, -- Scenario (Heroic)
             [12] = {}, -- Scenario
-            --[13] = {}, -- none
-            [14] = {}, -- Flex
+            --[13]
+            [14] = {}, -- Normal
+            [15] = {}, -- Heroic
+            [16] = {}, -- Mythic
+            [17] = {}, -- Looking For Raid
+            [18] = {}, -- Event (raid)
+            [19] = {}, -- Event (dungeon)
+            [20] = {}, -- Event Scenario
         },
     },
     global =
@@ -295,15 +329,15 @@ function A:ConfigurationPanel()
     };
 
     local order = 0;
-    for i=1,14 do
-        local difficultyName = GetDifficultyInfo(i);
+    for i=1,20 do
+        local difficultyName, groupType = GetDifficultyInfo(i);
 
-        if ( difficultyName ) then
-            panel.args.options.args.instanceType.args[difficultyName] =
+        if ( difficultyName and groupType ) then
+            panel.args.options.args.instanceType.args[difficultyName..groupType] =
             {
                 order = order,
                 name = difficultyName,
-                desc = L["With this options enabled it will ask if you want to enable logging when zoning to a new %s instance."]:format(difficultyName),
+                desc = L["With this options enabled it will ask if you want to enable logging when zoning to a new %s instance."]:format(difficultyName.." ("..groupType..")"),
                 type = "toggle",
                 set = function() A.db.profile.instanceType[i] = not A.db.profile.instanceType[i]; end,
                 get = function() return A.db.profile.instanceType[i]; end
@@ -316,23 +350,23 @@ function A:ConfigurationPanel()
     order = 0;
     local order2 = 0;
     for k,v in pairs(A.db.profile.enabledMapID) do
-        local difficultyName = GetDifficultyInfo(k);
+        local difficultyName, groupType = GetDifficultyInfo(k);
 
-        panel.args.enabledInstance.args[difficultyName] =
+        panel.args.enabledInstance.args[difficultyName..groupType] =
         {
             order = order,
-            name = difficultyName,
+            name = difficultyName.." ("..groupType..")",
             type = "group",
             inline = true,
             args = {},
         };
 
         for kk,vv in pairs(v) do
-            panel.args.enabledInstance.args[difficultyName].args[A.db.global.instanceNameByID[kk] or tostring(kk)] =
+            panel.args.enabledInstance.args[difficultyName..groupType].args[A.db.global.instanceNameByID[kk] or tostring(kk)] =
             {
                 order = order2,
                 name = A.db.global.instanceNameByID[kk] or tostring(kk),
-                desc = L["Enable auto logging for %s (%s)."]:format(A.db.global.instanceNameByID[kk] or tostring(kk), difficultyName),
+                desc = L["Enable auto logging for %s (%s)."]:format(A.db.global.instanceNameByID[kk] or tostring(kk), difficultyName.." ("..groupType..")"),
                 type = "toggle",
                 set = function(info, val)
                     if ( val ) then
