@@ -1,9 +1,9 @@
-﻿## Interface: 60000
+﻿## Interface: 70000
 ## Title: Broker Logger
 ## Notes: Automaticaly enable combat logging when zoning into instances.
 ## Author: Shenton
 ## SavedVariables: BrokerLoggerDB
-## Version: 1.2.1
+## Version: 1.2.2
 
 Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
