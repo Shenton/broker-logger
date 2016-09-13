@@ -164,6 +164,9 @@ function A:PLAYER_ENTERING_WORLD()
     A:Update();
     A:SetAutoLoggingState();
     A:UnregisterEvent("PLAYER_ENTERING_WORLD");
+
+    -- Dev stuff this need to commented out
+    --A:PrintDifficultyInfos();
 end
 
 --- Callback for hook LoggingCombat()
@@ -209,6 +212,11 @@ end
 -- 18   Event               raid        false       false           false           false           nil
 -- 19   Event               party       false       false           false           false           nil
 -- 20   Event Scenario      scenario    false       false           false           false           nil
+-- 21
+-- 22
+-- 23   Mythic              party       true        false           false           true            nil
+-- 24   Timewalking         party       false       false           false           false           nil
+-- 25   PvP Scenario        scenario    false       false           false           false           nil
 
 --- Default configation table
 local defaultDB =
@@ -238,6 +246,11 @@ local defaultDB =
             [18] = 1, -- Event (raid)
             [19] = 1, -- Event (dungeon)
             [20] = 1, -- Event Scenario
+            --[21]
+            --[22]
+            [23] = 1, -- Mythic (party)
+            [24] = 1, -- Timewalking
+            [25] = 1, -- PvP Scenario
         },
         enabledMapID =
         {
@@ -261,6 +274,11 @@ local defaultDB =
             [18] = {}, -- Event (raid)
             [19] = {}, -- Event (dungeon)
             [20] = {}, -- Event Scenario
+            --[21]
+            --[22]
+            [23] = {}, -- Mythic (party)
+            [24] = {}, -- Timewalking
+            [25] = {}, -- PvP Scenario
         },
     },
     global =
@@ -487,3 +505,10 @@ function A:OnEnable()
     LibStub("AceConfigDialog-3.0"):SetDefaultSize("BrokerLoggerConfig", 800, 500);
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("BrokerLoggerConfig", "Broker Logger");
 end
+
+--- Dev Stuff
+-- function A:PrintDifficultyInfos()
+    -- for i=1,50 do
+        -- print(i, GetDifficultyInfo(i));
+    -- end
+-- end
