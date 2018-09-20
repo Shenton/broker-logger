@@ -1,29 +1,35 @@
-﻿-- ********************************************************************************
--- Broker Logger (Broker_Logger)
--- Automaticaly enable combat logging when zoning into instances.
--- By: Shenton
---
--- Core.lua
--- ********************************************************************************
+﻿--[[-----------------------------------------------------------------------------------------------
+    Broker Logger (Broker_Logger)
+    Automaticaly enable combat logging when zoning into instances.
+    By: Shenton
 
-local LibStub = LibStub;
+    Core.lua
+-------------------------------------------------------------------------------------------------]]
+
+--[[-----------------------------------------------------------------------------------------------
+    Upvalues
+-------------------------------------------------------------------------------------------------]]
+
+local pairs = pairs;
+local ipairs = ipairs;
+local tostring = tostring;
+
+-- GLOBALS:  LoggingCombat, PlaySound, DEFAULT_CHAT_FRAME, IsInInstance, GetInstanceInfo
+-- GLOBALS: StaticPopup_Show, GetDifficultyInfo
+
+--[[-----------------------------------------------------------------------------------------------
+    Ace3, libs, addon global
+-------------------------------------------------------------------------------------------------]]
 
 -- Ace libs (<3)
 local A = LibStub("AceAddon-3.0"):NewAddon("Broker_Logger", "AceEvent-3.0", "AceHook-3.0");
 local L = LibStub("AceLocale-3.0"):GetLocale("Broker_Logger");
 
--- ********************************************************************************
--- Variables
--- ********************************************************************************
+_G["BrokerLoggerGlobal"] = A;
 
--- Globals to locals
-local pairs = pairs;
-local ipairs = ipairs;
-local tostring = tostring;
-
--- mikk's FindGlobals
--- GLOBALS:  LoggingCombat, PlaySound, DEFAULT_CHAT_FRAME, IsInInstance, GetInstanceInfo
--- GLOBALS: StaticPopup_Show, GetDifficultyInfo
+--[[-----------------------------------------------------------------------------------------------
+    Variables
+-------------------------------------------------------------------------------------------------]]
 
 -- AddOn version
 A.version = GetAddOnMetadata("Broker_Logger", "Version");
@@ -41,7 +47,10 @@ A.color =
 A.iconEnabled = "Interface\\ICONS\\INV_Inscription_ParchmentVar02";
 A.iconDisabled = "Interface\\ICONS\\INV_Inscription_ParchmentVar01";
 
--- Static popup
+--[[-----------------------------------------------------------------------------------------------
+    Static Popup
+-------------------------------------------------------------------------------------------------]]
+
 StaticPopupDialogs["BrokerLoggerNewInstance"] = {
     text = L["You have entered:\n\n\n|cff00ff96Instance: |r%s\n\n|cffc79c6eDifficulty: |r%s\n\n\nEnable logging for this area?"],
     button1 = YES,
@@ -58,12 +67,9 @@ StaticPopupDialogs["BrokerLoggerNewInstance"] = {
     preferredIndex = 3,
 };
 
--- Database revision number
-A.databaseRevision = 2;
-
--- ********************************************************************************
--- Functions
--- ********************************************************************************
+--[[-----------------------------------------------------------------------------------------------
+    Methods
+-------------------------------------------------------------------------------------------------]]
 
 function A:Message(text, color, silent)
     if ( color ) then
@@ -73,7 +79,7 @@ function A:Message(text, color, silent)
     end
 
     if ( not silent ) then
-        PlaySound("TellMessage");
+        PlaySound(SOUNDKIT.TELL_MESSAGE);
     end
 
     DEFAULT_CHAT_FRAME:AddMessage(color.."Broker Logger"..": "..A.color["RESET"]..text);
@@ -91,8 +97,8 @@ end
 --- Return a bool value for enabled instance logging db
 -- @param var The db value
 function A:GetVarBool(var)
-    if ( var == 1 ) then return 1; end
-    return nil;
+    if ( var == 1 ) then return true; end
+    return false;
 end
 
 --- Check if logging is needed in this instance
@@ -106,17 +112,6 @@ function A:IsLoggingNeeded()
     -- Add instance name to database
     if ( not A.db.global.instanceNameByID[instanceMapID] ) then
         A.db.global.instanceNameByID[instanceMapID] = instanceName;
-    end
-
-    -- 5.3 moved scenario from index 1 to 12, need to remove them from DB
-    -- The user need to enter the scenario for removing it
-    -- but this is far better than wipping everything
-    if ( difficultyIndex == 11 or difficultyIndex == 12 ) then
-        for k,v in pairs(A.db.profile.enabledMapID[1]) do
-            if ( k == instanceMapID ) then
-                A.db.profile.enabledMapID[1][instanceMapID] = nil;
-            end
-        end
     end
 
     -- Instance type is unknown to the addon
@@ -158,6 +153,10 @@ function A:SetAutoLoggingState()
     end
 end
 
+--[[-----------------------------------------------------------------------------------------------
+    Events & callbacks
+-------------------------------------------------------------------------------------------------]]
+
 --- Callback for event PLAYER_ENTERING_WORLD
 function A:PLAYER_ENTERING_WORLD()
     A.isLogging = LoggingCombat();
@@ -165,7 +164,7 @@ function A:PLAYER_ENTERING_WORLD()
     A:SetAutoLoggingState();
     A:UnregisterEvent("PLAYER_ENTERING_WORLD");
 
-    -- Dev stuff this need to commented out
+    -- Dev stuff this need to be commented out
     --A:PrintDifficultyInfos();
 end
 
@@ -187,36 +186,49 @@ function A:IsLoggingNeededCallback()
     A:Update();
 end
 
--- ********************************************************************************
--- Configuration
--- ********************************************************************************
+--[[-----------------------------------------------------------------------------------------------
+    Config
+-------------------------------------------------------------------------------------------------]]
 
---      name                groupType   isHeroic    isChallengeMode displayHeroic   displayMythic  toggleDifficultyID
--- 1    Normal              party       false       false           false           false           nil
--- 2    Heroic              party       true        false           false           false           nil
--- 3    10 Player           raid        false       false           false           false           5
--- 4    25 Player           raid        false       false           false           false           6
--- 5    10 Player (Heroic)  raid        true        false           false           false           3
--- 6    25 Player (Heroic)  raid        true        false           false           false           4
--- 7    Looking For Raid    raid        false       false           false           false           nil
--- 8    Challenge Mode      party       true        true            false           false           nil
--- 9    40 Player           raid        false       false           false           false           nil
--- 10
--- 11   Heroic Scenario     scenario    true        false           false           false           nil
--- 12   Normal Scenario     scenario    false       false           false           false           nil
--- 13
--- 14   Normal              raid        false       false           false           false           nil
--- 15   Heroic              raid        false       false           true            false           nil
--- 16   Mythic              raid        true        false           false           true            nil
--- 17   Looking For Raid    raid        false       false           false           false           nil
--- 18   Event               raid        false       false           false           false           nil
--- 19   Event               party       false       false           false           false           nil
--- 20   Event Scenario      scenario    false       false           false           false           nil
--- 21
--- 22
--- 23   Mythic              party       true        false           false           true            nil
--- 24   Timewalking         party       false       false           false           false           nil
--- 25   PvP Scenario        scenario    false       false           false           false           nil
+--      name                groupType   isHeroic    isChallengeMode displayHeroic   displayMythic   toggleDifficultyID  isLfr
+-- 1    Normal              party       false       false           false           false           nil                 false
+-- 2    Heroic              party       true        false           false           false           nil                 false
+-- 3    10 Player           raid        false       false           false           false           5                   false
+-- 4    25 Player           raid        false       false           false           false           6                   false
+-- 5    10 Player (Heroic)  raid        true        false           false           false           3                   false
+-- 6    25 Player (Heroic)  raid        true        false           false           false           4                   false
+-- 7    Looking For Raid    raid        false       false           false           false           nil                 true
+-- 8    Mythic Keystone     party       true        true            false           false           nil                 false
+-- 9    40 Player           raid        false       false           false           false           nil                 false
+
+-- 11   Heroic Scenario     scenario    true        false           false           false           nil                 false
+-- 12   Normal Scenario     scenario    false       false           false           false           nil                 false
+
+-- 14   Normal              raid        false       false           false           false           nil                 false
+-- 15   Heroic              raid        false       false           true            false           nil                 false
+-- 16   Mythic              raid        true        false           false           true            nil                 false
+-- 17   Looking For Raid    raid        false       false           false           false           nil                 true
+-- 18   Event               raid        false       false           false           false           nil                 false
+-- 19   Event               party       false       false           false           false           nil                 false
+-- 20   Event Scenario      scenario    false       false           false           false           nil                 false
+
+-- 23   Mythic              party       true        false           false           true            nil                 false
+-- 24   Timewalking         party       false       false           false           false           nil                 false
+-- 25   World PvP Scenario  scenario    false       false           false           false           nil                 false
+
+-- 29   PvEvP Scenario      pvp         false       false           false           false           nil                 false
+-- 30   Event               scenario    false       false           false           false           nil                 false
+
+-- 32   World PvP Scenario  scenario    false       false           false           false           nil                 false
+-- 33   Timewalking         raid        false       false           false           false           nil                 false
+-- 34   PvP                 pvp         false       false           false           false           nil                 false
+
+-- 38   Normal              scenario    false       false           false           false           nil                 false
+-- 39   Heroic              scenario    false       false           true            false           nil                 false
+-- 40   Mythic              scenario    false       false           false           true            nil                 false
+
+-- 45   PvP                 scenario    false       false           false           false           nil                 false
+
 
 --- Default configation table
 local defaultDB =
@@ -235,10 +247,10 @@ local defaultDB =
             [7] = 1, -- Looking For Raid
             [8] = 1, -- Challenge Mode
             [9] = 1, -- 40 Player
-            --[10]
+            -- 10
             [11] = 1, -- Scenario (Heroic)
             [12] = 1, -- Scenario
-            --[13]
+            -- 13
             [14] = 1, -- Normal
             [15] = 1, -- Heroic
             [16] = 1, -- Mythic
@@ -246,11 +258,23 @@ local defaultDB =
             [18] = 1, -- Event (raid)
             [19] = 1, -- Event (dungeon)
             [20] = 1, -- Event Scenario
-            --[21]
-            --[22]
+            -- 21-22
             [23] = 1, -- Mythic (party)
             [24] = 1, -- Timewalking
             [25] = 1, -- PvP Scenario
+            -- 26-28
+            [29] = 1, -- PvEvP Scenario
+            [30] = 1, -- Event (scenario)
+            -- 31
+            [32] = 1, -- World PvP Scenario
+            [33] = 1, -- Timewalking
+            [34] = 1, -- PvP (pvp)
+            -- 35-37
+            [38] = 1, -- Normal
+            [39] = 1, -- Heroic
+            [40] = 1, -- Mythic
+            -- 41-44
+            [45] = 1, -- PvP (scenario)
         },
         enabledMapID =
         {
@@ -263,10 +287,10 @@ local defaultDB =
             [7] = {}, -- Looking For Raid
             [8] = {}, -- Challenge Mode
             [9] = {}, -- 40 Player
-            --[10]
+            -- 10
             [11] = {}, -- Scenario (Heroic)
             [12] = {}, -- Scenario
-            --[13]
+            -- 13
             [14] = {}, -- Normal
             [15] = {}, -- Heroic
             [16] = {}, -- Mythic
@@ -274,16 +298,26 @@ local defaultDB =
             [18] = {}, -- Event (raid)
             [19] = {}, -- Event (dungeon)
             [20] = {}, -- Event Scenario
-            --[21]
-            --[22]
+            -- 21-22
             [23] = {}, -- Mythic (party)
             [24] = {}, -- Timewalking
             [25] = {}, -- PvP Scenario
+            [29] = {}, -- PvEvP Scenario
+            [30] = {}, -- Event (scenario)
+            -- 31
+            [32] = {}, -- World PvP Scenario
+            [33] = {}, -- Timewalking
+            [34] = {}, -- PvP (pvp)
+            -- 35-37
+            [38] = {}, -- Normal
+            [39] = {}, -- Heroic
+            [40] = {}, -- Mythic
+            -- 41-44
+            [45] = {}, -- PvP (scenario)
         },
     },
     global =
     {
-        databaseRevision = 0,
         instanceNameByID = {},
     },
 };
@@ -408,49 +442,9 @@ function A:ConfigurationPanel()
     return panel;
 end
 
--- ********************************************************************************
--- Database revision handling
--- ********************************************************************************
-
--- Is an update needed?
-function A:CheckDatabaseRevision()
-    if ( A.db.global.databaseRevision < A.databaseRevision ) then
-        if ( A.db.global.databaseRevision < 2 ) then
-            A:CheckDatabaseRevision2();
-        end
-    end
-end
-
--- 5.2
--- GetInstanceDifficulty() removed, using GetInstanceInfo() instead, offset by 1 the instance difficulty
--- Using instance map IDs instead of global map IDs, this need a wipe of db
-function A:CheckDatabaseRevision2()
-    for k,v in ipairs(A.db:GetProfiles()) do
-        if ( A.db.profiles[v] ) then
-            if ( A.db.profiles[v].instanceType ) then -- this can be saved, offset by 1
-                for i=1,9 do
-                    A.db.profiles[v].instanceType[i] = A.db.profiles[v].instanceType[i+1];
-                end
-
-                A.db.profiles[v].instanceType[10] = nil;
-            end
-
-            if ( A.db.profiles[v].enabledMapID ) then -- this can not be saved, wipe
-                for i=1,10 do
-                    A.db.profiles[v].enabledMapID[i] = nil;
-                end
-            end
-        end
-    end
-
-    A.db.global.databaseRevision = 2;
-
-    A:CheckDatabaseRevision();
-end
-
--- ********************************************************************************
--- Main
--- ********************************************************************************
+--[[-----------------------------------------------------------------------------------------------
+    Ace3 init
+-------------------------------------------------------------------------------------------------]]
 
 --- AceAddon callback
 -- Called after the addon is fully loaded
@@ -497,18 +491,18 @@ function A:OnEnable()
     -- Hooks
     A:SecureHook("LoggingCombat");
 
-    -- Is update needed?
-    A:CheckDatabaseRevision();
-
     -- Configuration panel
     LibStub("AceConfig-3.0"):RegisterOptionsTable("BrokerLoggerConfig", A.ConfigurationPanel);
     LibStub("AceConfigDialog-3.0"):SetDefaultSize("BrokerLoggerConfig", 800, 500);
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("BrokerLoggerConfig", "Broker Logger");
 end
 
---- Dev Stuff
+--[[-----------------------------------------------------------------------------------------------
+    Dev tools
+-------------------------------------------------------------------------------------------------]]
+
 -- function A:PrintDifficultyInfos()
-    -- for i=1,50 do
+    -- for i=1,100 do
         -- print(i, GetDifficultyInfo(i));
     -- end
 -- end
